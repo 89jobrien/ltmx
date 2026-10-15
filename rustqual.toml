@@ -1,0 +1,100 @@
+# rustqual configuration -- workspace quality policy
+#
+# Thresholds start from ~/dev/taskit/rustqual.toml and are tightened where
+# ltmx's shape makes the looser defaults wrong. This is a policy, not a
+# scoreboard: a finding here is a question to answer, not an automatic refactor.
+
+ignore_functions = [
+  # Composition-root entry point and test bodies are thin by design.
+  "main",
+  "test_*",
+]
+exclude_files = []
+strict_closures = false
+strict_iterator_chains = false
+allow_recursion = false
+strict_error_propagation = false
+# Suppressions are worth at most 1 in 20 of all suppressions. ltmx's answer to
+# a code-quality finding should be a change, not an `#[allow]`.
+max_suppression_ratio = 0.05
+fail_on_warnings = false
+
+[complexity]
+enabled = true
+# Lower than taskit's 18/11. ltmx has no TUI, no protocol layer and no
+# container runtime -- the hot paths are tokenizing, scoring and vector math,
+# which should stay legible enough to reason about by reading them.
+max_cognitive = 15
+max_cyclomatic = 10
+max_nesting_depth = 4
+max_function_lines = 60
+include_nesting_penalty = true
+detect_magic_numbers = true
+detect_unsafe = true
+detect_error_handling = true
+# The integer defaults plus the floating-point identities. Half of ltmx is
+# numeric code -- BM25, cosine, normalization, RRF -- where 0.0/1.0/0.5 are
+# mathematical constants rather than unexplained literals. Leaving them in
+# produced 40 of the 61 findings at first run, which is noise that trains
+# people to ignore the tool. The non-identity literals (16 for the hex radix,
+# 140 for print width, BM25's k1 and b) are deliberately NOT allowed: naming
+# those is the point.
+allowed_magic_numbers = ["0", "1", "-1", "2", "0.0", "1.0", "-1.0", "0.5"]
+
+[duplicates]
+enabled = true
+similarity_threshold = 0.85
+min_tokens = 30
+min_lines = 5
+min_statements = 3
+# Duplicated test setup is cheaper to read duplicated than to abstract, and
+# shared helpers across `tests/` obscure which case proves what.
+ignore_tests = true
+ignore_trait_impls = true
+# Dead-code detection cannot see across the crate boundary: `ltmx-domain`'s
+# public port is consumed only by sibling crates and by the conformance suite.
+# clippy's private-dead-code check covers the case rustqual cannot.
+detect_dead_code = false
+detect_wildcard_imports = true
+detect_repeated_matches = true
+
+[boilerplate]
+enabled = true
+suggest_crates = true
+
+[srp]
+enabled = true
+# A port implementation, a tokenizer and a report struct are cohesive types
+# with distinct reasons to change; clustering them into one is a regression.
+smell_threshold = 0.6
+max_fields = 12
+max_methods = 20
+max_fan_out = 10
+lcom4_threshold = 2
+weights = [0.4, 0.25, 0.15, 0.2]
+file_length_baseline = 300
+file_length_ceiling = 800
+max_independent_clusters = 2
+min_cluster_statements = 5
+max_parameters = 5
+
+[coupling]
+enabled = true
+# Ports live in ltmx-domain and adapters depend inward. A crate that fans out
+# toward several adapters is the architecture leaking.
+max_instability = 0.8
+max_fan_in = 15
+max_fan_out = 12
+check_sdp = true
+
+[test_quality]
+enabled = true
+
+[weights]
+iosp         = 0.22
+complexity   = 0.18
+dry          = 0.13
+srp          = 0.18
+coupling     = 0.09
+test_quality = 0.10
+architecture = 0.10

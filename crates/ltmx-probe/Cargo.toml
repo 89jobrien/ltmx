@@ -1,0 +1,29 @@
+[package]
+name = "ltmx-probe"
+description = "Spike harness: can local traces alone answer real questions?"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = ["claude-transcripts", "bm25", "ollama", "hybrid"]
+claude-transcripts = ["ltmx-sources/claude-transcripts"]
+# Reads another application's private database. Off unless asked for.
+pieces-archive = ["ltmx-sources/pieces-archive"]
+bm25 = ["dep:ltmx-lexical"]
+ollama = ["ltmx-embed/ollama"]
+# Lexical + dense retrieval fused with reciprocal rank fusion.
+hybrid = ["dep:ltmx-retrieve", "bm25", "ollama"]
+
+[dependencies]
+ltmx-domain.workspace = true
+ltmx-sources.workspace = true
+ltmx-lexical = { workspace = true, optional = true }
+ltmx-retrieve = { workspace = true, optional = true }
+ltmx-embed = { path = "../ltmx-embed", optional = true }
+miette.workspace = true
+clap.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

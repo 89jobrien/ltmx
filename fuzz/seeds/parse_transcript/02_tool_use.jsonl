@@ -1,0 +1,2 @@
+{"type":"assistant","uuid":"seed-2","sessionId":"s","timestamp":"2026-08-23T08:05:00Z","message":{"role":"assistant","content":[{"type":"tool_use","name":"Bash","input":{"command":"cargo xtask test --affected"}}]}}
+{"type":"assistant","uuid":"seed-3","sessionId":"s","timestamp":"2026-08-23T08:05:01Z","message":{"role":"assistant","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/repo/src/store.rs"}},{"type":"tool_use","name":"Grep","input":{"pattern":"vec0"}}]}}

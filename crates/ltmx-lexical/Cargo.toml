@@ -1,0 +1,19 @@
+[package]
+name = "ltmx-lexical"
+description = "Dependency-free BM25 lexical index over ltmx activity chunks."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = ["bm25"]
+# The hand-rolled BM25 adapter. Disable it once a real index crate implements
+# `ActivityIndex`; callers are unaffected either way.
+bm25 = []
+
+[dependencies]
+ltmx-domain.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true

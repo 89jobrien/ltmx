@@ -1,0 +1,13 @@
+# Pinned so every contributor and CI run formats and lints with the same
+# toolchain, instead of inheriting whatever `rustup default` happens to be.
+#
+# `channel = "stable"` rather than a dated version: this project publishes
+# nothing yet, and a pinned date here would silently rot every few weeks.
+# Once a release exists, pin the exact version instead.
+#
+# The fuzz directory is excluded from the workspace and builds on nightly, so
+# `cargo +nightly fuzz` opts out explicitly rather than dragging nightly into
+# the main toolchain.
+[toolchain]
+channel = "stable"
+components = ["clippy", "rustfmt"]

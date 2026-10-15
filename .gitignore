@@ -1,0 +1,12 @@
+/target
+**/*.rs.bk
+*.pdb
+.DS_Store
+
+# libFuzzer's generated corpus is reproducible from the committed seeds in
+# fuzz/seeds, so it is not versioned. The seeds themselves are permanent and
+# must never be deleted: they encode the input shapes the parser is expected
+# to survive.
+fuzz/target
+fuzz/corpus
+fuzz/artifacts

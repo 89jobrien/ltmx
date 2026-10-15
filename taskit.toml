@@ -1,0 +1,72 @@
+[workspace]
+crates = [
+  { dir = "crates/ltmx-domain", pkg = "ltmx-domain" },
+  { dir = "crates/ltmx-sources", pkg = "ltmx-sources" },
+  { dir = "crates/ltmx-lexical", pkg = "ltmx-lexical" },
+  { dir = "crates/ltmx-retrieve", pkg = "ltmx-retrieve" },
+  { dir = "crates/ltmx-embed", pkg = "ltmx-embed" },
+  { dir = "crates/ltmx-probe", pkg = "ltmx-probe" },
+]
+
+# `fuzz` builds on nightly and sits outside the normal dependency graph.
+
+[[workspace.propagation]]
+source = "ltmx-domain"
+dependents = ["ltmx-sources", "ltmx-lexical", "ltmx-retrieve", "ltmx-embed", "ltmx-probe"]
+
+[[workspace.propagation]]
+source = "ltmx-sources"
+dependents = ["ltmx-probe"]
+
+[[workspace.propagation]]
+source = "ltmx-lexical"
+dependents = ["ltmx-probe"]
+
+[[workspace.propagation]]
+source = "ltmx-retrieve"
+dependents = ["ltmx-probe"]
+
+[[workspace.propagation]]
+source = "ltmx-embed"
+dependents = ["ltmx-probe"]
+
+[[protocol.surfaces]]
+name = "ltmx-domain-ports"
+path = "crates/ltmx-domain/src/ports/mod.rs"
+
+[ci]
+
+[[ci.steps]]
+name = "self-check"
+cmd = "self-check"
+gate = true
+
+[[ci.steps]]
+name = "fmt --check"
+cmd = "fmt --check"
+gate = false
+
+[[ci.steps]]
+name = "lint"
+cmd = "lint"
+gate = false
+
+[[ci.steps]]
+name = "compile-tests"
+cmd = "compile-tests"
+gate = false
+
+[[ci.steps]]
+name = "test"
+cmd = "test"
+gate = false
+
+[[ci.steps]]
+name = "check-deps"
+cmd = "check-deps"
+gate = false
+
+[[ci.steps]]
+name = "check-protocol-drift"
+cmd = "check-protocol-drift"
+gate = false

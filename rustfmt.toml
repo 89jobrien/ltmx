@@ -1,0 +1,9 @@
+# Matches the workspace convention in ~/dev/AGENTS.md: 100-column lines.
+# This is also rustfmt's default max_width, so the line exists to state the
+# intent rather than to change behaviour -- which is the point. If the default
+# ever moves, a formatter with no config silently reformats the whole repo.
+max_width = 100
+
+# Cargo already passes `--edition` when invoked as `cargo fmt`; declaring it
+# here means a bare `rustfmt crates/ltmx-domain/src/lib.rs` behaves the same.
+edition = "2024"

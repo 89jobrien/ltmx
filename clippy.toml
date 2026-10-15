@@ -1,0 +1,5 @@
+# Edition 2024 requires Rust 1.85. Declaring the floor here keeps clippy from
+# suggesting std APIs that are newer than what `[workspace.package] rust-version`
+# promises to support. It also stops a contributor on a bleeding-edge toolchain
+# from landing code that fails to build on the declared MSRV.
+msrv = "1.85"

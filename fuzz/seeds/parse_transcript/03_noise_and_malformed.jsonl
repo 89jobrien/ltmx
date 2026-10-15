@@ -1,0 +1,7 @@
+{"type":"mode","mode":"normal","sessionId":"s"}
+{"type":"user","uuid":"seed-4","sessionId":"s","timestamp":"2026-08-23T08:00:00Z","message":{"role":"user","content":"<command-name>/clear</command-name>"}}
+{"type":"attachment","uuid":"seed-5","timestamp":"2026-08-23T08:00:01Z","attachment":{"type":"hook_success","exitCode":0}}
+{"type":"user","uuid":"seed-6","sessionId":"s","timestamp":"2026-08-23T08:00:02Z","message":{"role":"user","content":[{"type":"text","text":"kept"},{"type":"text","text":"multi"}]}}
+{"type":"user","uuid":"seed-7","sessionId":"s","message":{"role":"user","content":"no timestamp"}}
+not json at all
+{"type":"user","uuid":"seed-8","sessionId":"s","timestamp":"not-a-date","message":{"role":"user","content":"bad date"}}

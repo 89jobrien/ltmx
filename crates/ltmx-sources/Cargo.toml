@@ -1,0 +1,28 @@
+[package]
+name = "ltmx-sources"
+description = "Parsers turning durable local traces into ltmx activity chunks."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# Reads `~/.claude/projects/**/*.jsonl` session transcripts.
+claude-transcripts = ["dep:ignore"]
+# Reads the archived Pieces LTM database. Separate from `claude-transcripts`
+# because it reads *another application's* private data store -- see
+# `pieces.rs` and docs/adrs/ADR-013.
+pieces-archive = ["dep:tracing"]
+
+[dependencies]
+ltmx-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+ignore = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true

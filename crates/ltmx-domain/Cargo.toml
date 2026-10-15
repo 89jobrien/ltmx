@@ -1,0 +1,12 @@
+[package]
+name = "ltmx-domain"
+description = "Core types and ports for ltmx: reconstructed activity memory."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+chrono.workspace = true

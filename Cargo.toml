@@ -1,0 +1,70 @@
+[workspace]
+members = [
+    "crates/ltmx-domain",
+    "crates/ltmx-sources",
+    "crates/ltmx-lexical",
+    "crates/ltmx-retrieve",
+    "crates/ltmx-embed",
+    "crates/ltmx-probe",
+    "xtask",
+]
+# Fuzz targets build on nightly with a separate toolchain and are not part of
+# the normal dependency graph.
+exclude = ["fuzz"]
+
+resolver = "3"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+# Edition 2024 requires 1.85. Declared so `clippy.toml`'s `msrv` and cargo's own
+# resolver agree, and so a contributor on a newer toolchain cannot land a
+# dependency or std API that breaks the stated floor.
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Joseph O'Brien"]
+# `repository` is deliberately absent: this repo has no git remote yet. Adding a
+# guessed URL would be worse than leaving it out -- cargo would publish a
+# `homepage` pointing at a repository that may not exist. Set it when the
+# remote is created.
+keywords = ["bm25", "embeddings", "retrieval", "search", "activity"]
+categories = ["command-line-utilities", "text-processing", "development-tools"]
+
+# NOTE: `[workspace.lints]` with `lints.workspace = true` is deliberately
+# absent. The toolchain in this environment (cargo 1.99.0) accepts the key and
+# then ignores it: every member manifest reports "unused manifest key:
+# package.lints" and no lint flags reach rustc. A lint table that emits seven
+# manifest warnings and enforces nothing is worse than no table.
+#
+# The policy that would live here -- no `unsafe` outside one scoped test, plus
+# a pedantic pass -- is enforced through the gate command in AGENTS.md until
+# the inheritance form is honoured. ltmx has exactly one `unsafe`, a
+# `std::env::set_var` in a single-threaded test, and it carries a SAFETY
+# comment; revisit when adding `[workspace.lints]` becomes possible.
+
+# Dependency policy: keep this list short and justified. Every entry should be
+# pure Rust and small. Tier-1 (external binaries: screencapture, tesseract) and
+# tier-2 (Objective-C bindings) are deliberately absent -- see AGENTS.md.
+[workspace.dependencies]
+ltmx-domain = { path = "crates/ltmx-domain" }
+ltmx-sources = { path = "crates/ltmx-sources" }
+ltmx-lexical = { path = "crates/ltmx-lexical" }
+ltmx-retrieve = { path = "crates/ltmx-retrieve" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+anyhow = "1"
+# Rendering and diagnostics for binaries. Libraries stay on `thiserror`: a
+# `Diagnostic` impl in a published crate leaks into every consumer.
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2"
+clap = { version = "4", features = ["derive"] }
+ignore = "0.4"
+tempfile = "3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

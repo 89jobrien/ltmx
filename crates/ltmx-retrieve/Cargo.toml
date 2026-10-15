@@ -1,0 +1,17 @@
+[package]
+name = "ltmx-retrieve"
+description = "Dense retrieval and hybrid fusion over ltmx activity chunks."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+ltmx-domain.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true

@@ -1,0 +1,56 @@
+# cargo-deny configuration
+# See: https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+# Nothing ignored. An ignore entry is a decision with a named condition for
+# revisiting, recorded in a comment -- not a way to make the gate green.
+
+[licenses]
+# Derived from the actual resolved dependency graph via `cargo about`, not
+# copied from a sibling repo. The set is deliberately minimal: it is the union
+# of licenses present today, and nothing more.
+#
+#   MIT, Apache-2.0         -- the overwhelming majority
+#   Apache-2.0 WITH LLVM-exception
+#                           -- rustix, linux-raw-sys
+#   0BSD, Unlicense         -- aho-corasick, globset, memchr, ignore, walkdir
+#   Zlib                    -- miniz_oxide (via flate2)
+#   ISC                     -- is_ci (via anstream/clap)
+#   Unicode-3.0             -- icu4x and litemap, pulled in by idna via url/idna;
+#                              unicode-ident is "(MIT OR Apache-2.0) AND
+#                              Unicode-3.0", so this one is required, not optional
+#
+# A new license class must FAIL this gate rather than pass by being absent from
+# the list. Do not widen the list reflexively -- see docs/adrs/ADR-004 on why the
+# dependency graph is kept small in the first place. Adding an entry means
+# answering "is this acceptable to distribute inside ltmx, which reads a user's
+# private transcripts?".
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "0BSD",
+  "Unlicense",
+  "Zlib",
+  "ISC",
+  "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+# Unlicensed crates in the graph are a publishing blocker, not a warning.
+ignore = false
+
+[bans]
+# Warn rather than deny: two versions of a transitive crate is normal and
+# denying it produces churn without reducing supply-chain surface.
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+# ltmx is local-first and ships no network dependency beyond loopback Ollama.
+# Anything pulled from a non-crates.io source is worth a deliberate decision.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
