@@ -25,21 +25,22 @@ The highest-value work, because it changes what every later phase is built on.
 an identical score. A third of `top_k` is currently spent on one answer. No
 other improvement can be measured cleanly until this is fixed.
 
-**Measured 2026-10-15 — the scale is worse than assumed.** The embedding cache
-is keyed by text, so its entry count _is_ the distinct-text count:
+**Measured 2026-10-15.** Counted directly with `COUNT(DISTINCT)` on the source
+tables, not inferred from a cache:
 
-| Corpus         | Chunks  | Distinct texts | Duplicate rate |
-| -------------- | ------- | -------------- | -------------- |
-| Transcripts    | 57,890  | 38,266         | 34%            |
-| Pieces archive | 363,791 | ~48,000        | **~87%**       |
-| Combined       | 421,681 | 86,427         | 80%            |
+| Collection            | Rows    | Distinct | Duplicate rate |
+| --------------------- | ------- | -------- | -------------- |
+| Agent transcripts     | 57,890  | 38,266   | **34%**        |
+| Pieces archive (text) | 145,534 | 144,481  | **0.7%**       |
 
-Screen capture repeats itself — menus, toolbars, file trees, the same editor
-chrome, the same Slack sidebar. This is the _mechanism_ behind the ranking
-failure rather than a contributor to it: the top of the BM25 results is not
-merely noisy, it is **the same text many times over**.
+The transcripts are the duplicated corpus. The archive is not — each captured
+screen yields genuinely distinct text, so adding it does not worsen this.
 
-Corollary: adding capture capacity makes this worse before better.
+Worth separating **records** from **chunks**: 145,534 archive records become
+363,791 chunks because each is split at ~1,200 characters. That is chunking,
+not repetition, and conflating the two overstates duplication by an order of
+magnitude. An earlier draft of this file made exactly that mistake, inferring a
+duplicate rate from a cache that was still filling.
 
 **Open decision:** dedup in the retriever, or in the fusion stage. Recorded as
 open in `docs/adrs/README.md`.

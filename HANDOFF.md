@@ -201,19 +201,25 @@ The archive **contains the answer**. It is out-ranked, not missing. So this is
 a ranking problem, not a sourcing or availability problem — which rules out
 both "more sources" and "a bigger embedding model" as the fix. It is scoring.
 
-**How self-similar, measured.** The embedding cache is keyed by text, so its
-entry count _is_ the distinct-text count. **421,681 chunks collapse to 86,427
-distinct texts.** Subtracting the 38,266 transcript entries, the 363,791 archive
-chunks hold only ~48,000 distinct strings — an **~87% duplication rate**, far
-above the 34% measured on transcripts.
+**How self-similar — correction.** An earlier version of this file claimed the
+archive was ~87% duplicated. **That was wrong.** It inferred distinct-text count
+from the embedding cache's entry count while a background job was still filling
+it, which measures the job's progress, not the corpus.
 
-Screen capture repeats itself: menus, toolbars, file trees, the same Slack
-sidebar, the same editor chrome, hundreds of thousands of times. This is the
-_mechanism_ behind the bad ranking, not just a contributor — the top of the
-BM25 results is not merely noisy, it is **the same text over and over**.
+Counted directly with `COUNT(DISTINCT)`:
 
-Corollary for anyone tempted to add sources: more capture makes this worse
-before better.
+| Collection            | Rows    | Distinct | Duplicate rate |
+| --------------------- | ------- | -------- | -------------- |
+| Agent transcripts     | 57,890  | 38,266   | **34%**        |
+| Pieces archive (text) | 145,534 | 144,481  | **0.7%**       |
+
+The transcripts are the duplicated corpus. The archive barely duplicates at all —
+each captured screen produces distinct text.
+
+The trap was conflating **records** with **chunks**: 145,534 records become
+363,791 chunks because each is split at ~1,200 characters. That is chunking, not
+repetition. Worth remembering as a method error — _never infer a property of the
+corpus from an artifact that is still being built._
 
 ## Long-run observability — shipped
 
