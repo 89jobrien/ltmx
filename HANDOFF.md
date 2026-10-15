@@ -138,7 +138,26 @@ against it, and no embedding cache — 363,791 chunks at ~5 ms each is roughly
 | Cold | 562.3 s   | 0      | 57,875   | 38,263 entries |
 | Warm | **0.3 s** | 57,885 | 0        | 38,266 entries |
 
-118 MB. Keyed on `hash(model_id || text)` plus text length, so an edited
+**Full scale, measured 2026-10-15.** Transcripts plus the Pieces archive, once
+the cache had filled:
+
+| Run                    | Time      | Chunks  | Cached  | Embedded |
+| ---------------------- | --------- | ------- | ------- | -------- |
+| Cold, 208k still to go | 4,557.7 s | 421,805 | 213,449 | 208,356  |
+| Warm, zero misses      | **8.2 s** | 421,884 | 421,884 | 0        |
+
+**556×**, and cheap enough to run on every query. Two numbers from it worth
+keeping:
+
+- **~51k chunks/sec warm, end to end** — hashing, lookup and vector copy
+  included, not a partial measurement. This retires the `rust-hash` candidate
+  dependency: an 8 s pass is already invisible beside an Ollama round trip.
+- **21.9 ms per archive chunk** against the 5 ms/text transcript baseline.
+  Archive chunks are ~1,200 characters; transcript prompts are short. Length,
+  not contention.
+
+118 MB for the transcript corpus, ~1.2 GB once the archive is in. Keyed on
+`hash(model_id || text)` plus text length, so an edited
 transcript can never be served a stale vector, and a model swap invalidates
 rather than mixing vector spaces. Writes are atomic (temp + fsync + rename).
 
@@ -154,9 +173,11 @@ Two consequences now affordable:
 1. **The model comparison can actually be run.**
    `nomic-embed-text` vs `nomic-embed-text-v2-moe`, both 768-d, separate cache
    files per model.
-2. **Dedup got a measurement.** 57,885 chunks → 38,266 distinct texts. A third
-   of the transcript corpus is duplicated content, which is the same property
-   that makes Roadmap Phase 1.1 worth doing.
+2. **Dedup got a measurement.** 57,885 transcript chunks → 38,266 distinct
+   texts; a third of the transcript corpus is duplicated content. That is what
+   makes Roadmap Phase 1.1 worth doing. It is a _transcript_ property — the
+   archive barely repeats itself (0.7%), and the combined corpus duplicates at
+   only 5.7%.
 
 ## The archive is wired into retrieval — and it does not help yet
 
@@ -272,10 +293,12 @@ package.lints` and no lint flags reach rustc. Verified against a minimal
 
 ## Next steps, in order
 
-1. **Deduplicate results** and re-run `eval`. Highest-value next change: it is
-   currently wasting a third of `top_k` on a single answer.
-2. **Persist embeddings** so the probe does not pay 366s per run. This makes every
-   subsequent `eval` iteration cheap, which compounds.
+1. **Deduplicate results** and re-run `eval`. Highest-value next change: a third
+   of the transcript corpus is duplicated, and `top_k` is currently spent
+   repeatedly on one answer.
+2. ~~Persist embeddings~~ — **done**, see [ADR-014](docs/adrs/ADR-014-embedding-cache.md).
+   421,884 chunks warm in 8.2 s against 4,557.7 s cold, so every subsequent
+   `eval` iteration is cheap.
 3. **Rebalance chunks** — decide between rebalancing at chunk time and weighting
    at scoring time, then measure.
 4. **Define the MCP tool contract** and build `ltmx-mcp`. Blocked on the retrieval

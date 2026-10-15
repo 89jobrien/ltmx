@@ -105,10 +105,31 @@ document returning another's neighbours.
 
 - **Cold 562.3s → warm 0.3s** on the transcript corpus, measured. The
   comparison that motivated this is now affordable.
-- **Duplicate text collapses for free.** Keying on text means 57,885 chunks map
-  to 38,266 distinct entries — a 34% reduction that comes from content, not
-  tuning. It is a hint at how much self-similarity the corpus holds, and it is
-  the same property that makes result deduplication worthwhile
+- **The same holds at full scale.** Measured across transcripts plus the archive,
+  421,805 chunks and a 397,676-entry cache:
+
+  | Run                            | Time      | Cached  | Embedded |
+  | ------------------------------ | --------- | ------- | -------- |
+  | Cold (partly warm, 208k to go) | 4,557.7 s | 213,449 | 208,356  |
+  | Warm, all hits                 | **8.2 s** | 421,884 | 0        |
+
+  A 556× difference, and the warm pass is cheap enough to run on every query.
+
+- **The warm pass runs at ~51k chunks/sec end to end** — 421,884 chunks in
+  8.2 s with zero misses, covering hashing, map lookup and copying every vector
+  out of the cache. That is the whole cost, not a partial one. This retires the
+  `rust-hash` candidate dependency: a faster hasher cannot make an 8 s number
+  meaningfully smaller, and the number is already invisible next to an Ollama
+  round trip.
+- **Archive chunks embed ~4× slower than transcript text.** 21.9 ms/chunk against
+  a 5 ms/text baseline. The cause is length: archive chunks are ~1,200 characters
+  where transcript prompts are short. Not contention, not overhead — worth
+  knowing before attributing a slow cold run to the wrong thing.
+- **Duplicate text collapses for free.** Keying on text means 57,885 transcript
+  chunks map to 38,266 distinct entries — a 34% reduction that comes from
+  content, not tuning. The combined corpus is far less duplicated: 421,805
+  chunks to 397,676 entries, **5.7%**. The archive barely repeats itself, so
+  the 34% is a transcript property, not a general one
   ([Roadmap](../../ROADMAP.md) Phase 1.1).
 - **118 MB on disk** for 38,266 × 768 `f32` vectors. About 4× the vector bytes,
   the rest being keys and lengths.

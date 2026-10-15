@@ -34,7 +34,10 @@ tables, not inferred from a cache:
 | Pieces archive (text) | 145,534 | 144,481  | **0.7%**       |
 
 The transcripts are the duplicated corpus. The archive is not — each captured
-screen yields genuinely distinct text, so adding it does not worsen this.
+screen yields genuinely distinct text, so adding it does not worsen this. Across
+the whole combined corpus, 421,805 chunks hold 397,676 distinct texts: **5.7%**.
+Dedup is a transcript problem, not a general one, which narrows where it is
+worth fixing.
 
 Worth separating **records** from **chunks**: 145,534 archive records become
 363,791 chunks because each is split at ~1,200 characters. That is chunking,

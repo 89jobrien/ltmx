@@ -58,9 +58,10 @@ Recorded so they are not mistaken for settled:
   proves insufficient.
 - **Deduplication.** Neither index deduplicates. Dense returns the same chunk
   from three transcripts at an identical score, consuming a third of `top_k` on
-  one answer. Fix location undecided: the retriever, or the fusion stage. The
-  Pieces corpus will make this worse before it makes it better — 186k OCR rows
-  are heavily self-similar by construction.
+  one answer. Fix location undecided: the retriever, or the fusion stage.
+  Measured scope: transcripts are 34% duplicated, the Pieces archive 0.7%, the
+  combined corpus 5.7%. So the archive neither causes nor worsens this — an
+  earlier note here claimed it would, from a bad measurement.
 - **Chunk balance.** Action chunks (rendered tool calls) are 72% of the corpus
   and crowd out the prompts that carry intent. Whether to rebalance at chunking
   time or to weight at scoring time is undecided.
