@@ -5,6 +5,7 @@ members = [
     "crates/ltmx-lexical",
     "crates/ltmx-retrieve",
     "crates/ltmx-embed",
+    "crates/ltmx-store",
     "crates/ltmx-probe",
     "xtask",
 ]
@@ -50,6 +51,7 @@ ltmx-domain = { path = "crates/ltmx-domain" }
 ltmx-sources = { path = "crates/ltmx-sources" }
 ltmx-lexical = { path = "crates/ltmx-lexical" }
 ltmx-retrieve = { path = "crates/ltmx-retrieve" }
+ltmx-store = { path = "crates/ltmx-store" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

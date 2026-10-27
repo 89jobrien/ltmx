@@ -226,12 +226,15 @@ impl TimeRange {
 
 /// Extra signals that improve ranking without being part of the text.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct Provenance {
+pub struct ScoringSignals {
     /// Commit recency score in `0.0..=1.0`, where newer is higher.
     pub recency: f32,
     /// Emphasized term matches, e.g. a path hit inside a code chunk.
     pub term_overlap: u32,
 }
+
+/// Backwards-compatible alias for [`ScoringSignals`].
+pub type Provenance = ScoringSignals;
 
 /// One retrievable unit of reconstructed work.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -242,7 +245,7 @@ pub struct ActivityChunk {
     pub source: SourceRef,
     pub occurred_at: DateTime<Utc>,
     pub session: Option<SessionId>,
-    pub provenance: Provenance,
+    pub provenance: ScoringSignals,
 }
 
 impl ActivityChunk {
@@ -261,7 +264,7 @@ impl ActivityChunk {
             source,
             occurred_at,
             session: None,
-            provenance: Provenance {
+            provenance: ScoringSignals {
                 recency: 0.0,
                 term_overlap: 0,
             },
