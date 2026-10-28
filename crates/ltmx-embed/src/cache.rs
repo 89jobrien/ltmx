@@ -354,7 +354,7 @@ where
     /// Embeds only the items not already cached, in bounded slices.
     ///
     /// Every item is looked up individually and only genuine misses reach the
-    /// backend, still in one call per slice. Work is done a [`SLICE`] at a time
+    /// backend, still in one call per slice. Work is done a `SLICE` at a time
     /// so memory stays bounded regardless of corpus size, which is also what
     /// gives the progress callback and the periodic flush somewhere to fire.
     ///

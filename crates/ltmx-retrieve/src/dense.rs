@@ -95,7 +95,7 @@ where
     /// The embedder backing this index.
     ///
     /// Exposed so a caller can reach the embedder after the index has taken
-    /// ownership of it. [`crate::Embedder`] methods take `&self`, so a shared
+    /// ownership of it. [`ltmx_domain::Embedder`] methods take `&self`, so a shared
     /// borrow is enough to flush an on-disk cache once a build finishes.
     pub fn embedder(&self) -> &E {
         &self.embedder

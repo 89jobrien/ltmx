@@ -1,9 +1,9 @@
-//! Parsers turning durable local traces into [`ActivityChunk`]s.
+//! Parsers turning durable local traces into [`ltmx_domain::ActivityChunk`]s.
 //!
 //! Tier 0: everything here reads state you already have on disk. No screen
 //! capture, no Objective-C, no network. See `AGENTS.md` for the tier policy.
 //!
-//! [`pieces`] is a different kind of source: it reads an *archive* of screen
+//! `pieces` is a different kind of source: it reads an *archive* of screen
 //! activity that a previous product recorded, rather than capturing the screen
 //! now. It is behind its own feature flag because it reads another
 //! application's private database, and that is a heavier commitment than
