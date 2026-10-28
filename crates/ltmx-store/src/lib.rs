@@ -228,13 +228,15 @@ fn run_sqlite(db: &Path, sql: &str) -> Result<()> {
         .spawn()
         .map_err(|e| StoreError::Sqlite(e.to_string()))?;
     {
-        let stdin = child
+        let mut stdin = child
             .stdin
-            .as_mut()
+            .take()
             .ok_or_else(|| StoreError::Sqlite("stdin unavailable".into()))?;
         stdin
             .write_all(sql.as_bytes())
             .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+        // Dropping `stdin` here closes the pipe, which is what lets
+        // `sqlite3 -batch` see EOF and exit instead of blocking forever.
     }
     let status = child
         .wait()
@@ -260,13 +262,15 @@ fn run_sqlite_output(db: &Path, sql: &str) -> Result<String> {
         .spawn()
         .map_err(|e| StoreError::Sqlite(e.to_string()))?;
     {
-        let stdin = child
+        let mut stdin = child
             .stdin
-            .as_mut()
+            .take()
             .ok_or_else(|| StoreError::Sqlite("stdin unavailable".into()))?;
         stdin
             .write_all(sql.as_bytes())
             .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+        // Dropping `stdin` here closes the pipe, which is what lets
+        // `sqlite3 -batch` see EOF and exit instead of blocking forever.
     }
     let mut stdout = child
         .stdout
@@ -283,4 +287,78 @@ fn run_sqlite_output(db: &Path, sql: &str) -> Result<String> {
         return Err(StoreError::Sqlite(format!("sqlite3 exited {status}")));
     }
     Ok(buf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ltmx_domain::{ActivityRecord, Context, Origin, SourceProvenance, SourceRef};
+
+    fn at(secs: i64) -> DateTime<Utc> {
+        DateTime::from_timestamp(secs, 0).unwrap_or_default()
+    }
+
+    fn record(id: &str, text: &str, origin: Origin, secs: i64) -> ActivityRecord {
+        ActivityRecord::new(
+            id,
+            text,
+            origin,
+            SourceRef::file(format!("/src/{id}")),
+            at(secs),
+            None,
+            Context::empty(),
+            SourceProvenance::new(at(secs), "ltmx-store::tests", None),
+        )
+    }
+
+    // Regression for the sqlite3 -batch deadlock: run_sqlite/run_sqlite_output
+    // previously borrowed `child.stdin` via `.as_mut()`, which never dropped the
+    // write end of the pipe, so `sqlite3 -batch` never saw EOF and `wait()` (or
+    // `read_to_string()` on stdout) blocked forever. If that regresses, this test
+    // hangs instead of completing -- it does not merely fail an assertion.
+    #[test]
+    fn upsert_and_query_completes_instead_of_hanging_on_unclosed_stdin() -> Result<()> {
+        let dir = tempfile::tempdir().map_err(|e| StoreError::Sqlite(e.to_string()))?;
+        let store = SqliteStore::open(dir.path().join("corpus.db"))?;
+
+        store.upsert(&record("a", "hello world", Origin::Note, 1_700_000_000))?;
+
+        let found = store.query(&RecordQuery {
+            origin: Some(Origin::Note),
+            ..Default::default()
+        })?;
+
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].id, "a");
+        Ok(())
+    }
+
+    // Same deadlock, exercised via run_sqlite_output's larger write (several KB of
+    // SQL text) to make sure closing stdin before reading stdout holds even when
+    // the write exceeds a single pipe-buffer write.
+    #[test]
+    fn query_over_many_records_completes_instead_of_hanging() -> Result<()> {
+        let dir = tempfile::tempdir().map_err(|e| StoreError::Sqlite(e.to_string()))?;
+        let store = SqliteStore::open(dir.path().join("corpus.db"))?;
+
+        let batch: Vec<ActivityRecord> = (0..200)
+            .map(|i| {
+                record(
+                    &format!("rec-{i}"),
+                    &"x".repeat(256),
+                    Origin::Git,
+                    1_700_000_000 + i,
+                )
+            })
+            .collect();
+        let report = store.ingest(&batch)?;
+        assert_eq!(report.inserted, 200);
+
+        let found = store.query(&RecordQuery {
+            origin: Some(Origin::Git),
+            ..Default::default()
+        })?;
+        assert_eq!(found.len(), 200);
+        Ok(())
+    }
 }

@@ -64,6 +64,29 @@ cargo run -p ltmx-probe --release -- ask "why did we switch to colima" --strateg
 Embedding the full corpus takes minutes, so `eval` builds the dense index only
 when a strategy needs it.
 
+## Examples
+
+Each adapter crate has a self-contained `cargo run --example` that exercises its
+public API without touching your real corpus:
+
+```sh
+# BM25 search over a handful of in-memory chunks. No external dependencies.
+cargo run -p ltmx-lexical --example search
+
+# DenseIndex + HybridRetriever fusion, using a toy embedder so the example
+# runs offline with no Ollama server required.
+cargo run -p ltmx-retrieve --example hybrid_search
+
+# Ingest and query ActivityRecords through SqliteStore. Requires the
+# sqlite3 CLI on PATH (already a runtime dependency of ltmx-store).
+cargo run -p ltmx-store --example corpus
+```
+
+There is no example for `ltmx-embed`'s `OllamaEmbedder`: it needs a running
+local Ollama server (see [Notes](#notes)), so it is covered by the
+`#[ignore]`d integration tests under `cargo test -p ltmx-embed --features
+ollama -- --ignored` instead of a standalone example.
+
 ## Architecture
 
 Hexagonal. Ports live in `ltmx-domain`; adapters depend on the domain and never
