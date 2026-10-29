@@ -522,6 +522,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "ltmx-brief"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "ltmx-domain",
+ "ltmx-embed",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "ltmx-domain"
 version = "0.0.1"
 dependencies = [
@@ -554,13 +566,13 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "clap",
+ "ltmx-brief",
  "ltmx-domain",
  "ltmx-embed",
  "ltmx-lexical",
  "ltmx-retrieve",
  "ltmx-sources",
  "miette",
- "tracing",
  "tracing-subscriber",
 ]
 
@@ -570,7 +582,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "ltmx-domain",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -580,7 +591,6 @@ dependencies = [
  "chrono",
  "ignore",
  "ltmx-domain",
- "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
@@ -593,7 +603,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "ltmx-domain",
- "serde",
  "serde_json",
  "tempfile",
  "thiserror 1.0.69",

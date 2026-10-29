@@ -20,7 +20,12 @@ use chrono::{DateTime, Utc};
 use clap::{Parser, Subcommand, ValueEnum};
 use ltmx_domain::{ActivityChunk, Origin};
 #[cfg(feature = "bm25")]
-use ltmx_domain::{ActivityIndex, ScoredChunk, SearchParams, TimeRange};
+use ltmx_domain::{ActivityIndex, ScoredChunk, SearchParams};
+// `TimeRange` is needed by `Command::Brief`'s window derivation even when
+// `bm25` is off (`brief` no longer pulls in `hybrid`/`bm25`), so it is gated
+// on either feature rather than `bm25` alone.
+#[cfg(any(feature = "bm25", feature = "brief"))]
+use ltmx_domain::TimeRange;
 #[cfg(feature = "pieces-archive")]
 use std::path::Path;
 use std::path::PathBuf;
@@ -97,6 +102,29 @@ impl std::fmt::Display for Strategy {
     }
 }
 
+/// CLI spelling of [`ltmx_brief::BriefKind`].
+#[cfg(feature = "brief")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum BriefKindArg {
+    /// Last 24h, every origin, no path scoping.
+    Morning,
+    /// Git history and agent-transcript chunks, scoped to work paths.
+    Professional,
+    /// Note/manual chunks, and transcript chunks outside work paths.
+    Personal,
+}
+
+#[cfg(feature = "brief")]
+impl From<BriefKindArg> for ltmx_brief::BriefKind {
+    fn from(kind: BriefKindArg) -> Self {
+        match kind {
+            BriefKindArg::Morning => Self::Morning,
+            BriefKindArg::Professional => Self::Professional,
+            BriefKindArg::Personal => Self::Personal,
+        }
+    }
+}
+
 /// CLI spelling of [`Origin`], so the filter can be parsed from a flag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 enum OriginFilter {
@@ -129,7 +157,7 @@ impl From<OriginFilter> for Origin {
 /// Accepts `YYYY-MM`, `YYYY-MM-DD` or a full RFC 3339 timestamp, so the common
 /// question -- "around March" -- needs no timestamp fiddling, while a precise
 /// bound is still available when one is wanted.
-#[cfg(feature = "bm25")]
+#[cfg(any(feature = "bm25", feature = "brief"))]
 fn parse_bound(text: &str, end_of_period: bool) -> Result<DateTime<Utc>, String> {
     let trimmed = text.trim();
     let candidates = if end_of_period && trimmed.len() == 7 {
@@ -225,6 +253,16 @@ struct Cli {
     command: Command,
 }
 
+/// Default for `--work-prefix`: the current working directory, not a
+/// personal machine path, since this is a published, public CLI.
+#[cfg(feature = "brief")]
+fn default_work_prefix() -> String {
+    std::env::current_dir()
+        .ok()
+        .and_then(|p| p.to_str().map(str::to_owned))
+        .unwrap_or_else(|| ".".to_owned())
+}
+
 #[derive(Debug, Subcommand)]
 enum Command {
     /// Report how much material is available.
@@ -255,6 +293,30 @@ enum Command {
         /// Stop after this many records.
         #[arg(long)]
         limit: Option<usize>,
+    },
+    /// Generate a morning/professional/personal brief over recent activity.
+    ///
+    /// Evidence is selected directly from the corpus by origin and time
+    /// window -- a brief has no query, so it never goes through
+    /// `ActivityIndex::search`. Generation itself calls a local Ollama
+    /// model over that evidence.
+    #[cfg(feature = "brief")]
+    Brief {
+        #[arg(long, value_enum, default_value_t = BriefKindArg::Morning)]
+        kind: BriefKindArg,
+        /// Maximum pieces of evidence to hand to the generator.
+        #[arg(long, default_value_t = 20)]
+        top_k: usize,
+        /// Generation model passed to Ollama. Independent of the embedding
+        /// `--model` flag -- a brief does not require the dense/hybrid path.
+        #[arg(long, default_value = "llama3.2")]
+        gen_model: String,
+        /// Path prefix distinguishing "work" from "personal" chunks for the
+        /// `professional`/`personal` kinds. Ignored for `morning`. Defaults to
+        /// the current working directory rather than a personal path, since
+        /// this is a published, public CLI.
+        #[arg(long, default_value_t = default_work_prefix())]
+        work_prefix: String,
     },
 }
 
@@ -766,6 +828,60 @@ fn main() -> Result<()> {
         // explicitly so adding a command cannot silently fall through here.
         #[cfg(feature = "pieces-archive")]
         Command::Archive { .. } => unreachable!("archive returns before chunk loading"),
+        #[cfg(feature = "brief")]
+        Command::Brief {
+            kind,
+            top_k,
+            gen_model,
+            work_prefix,
+        } => {
+            let kind: ltmx_brief::BriefKind = kind.into();
+            // `filters` is only bound under `#[cfg(feature = "bm25")]`
+            // (see above); `brief` no longer pulls in `bm25`, so the
+            // non-bm25 path builds the window directly from `cli.since`/
+            // `cli.until`, mirroring `build_filters`'s window logic rather
+            // than requiring `bm25` just for this CLI surface.
+            #[cfg(feature = "bm25")]
+            let window = filters
+                .window
+                .unwrap_or_else(|| ltmx_brief::last_24h(Utc::now()));
+            #[cfg(not(feature = "bm25"))]
+            let window = {
+                let bound = match (&cli.since, &cli.until) {
+                    (None, None) => None,
+                    (Some(from), None) => {
+                        let start = parse_bound(from, false).map_err(|e| miette::miette!("{e}"))?;
+                        Some(TimeRange::new(start, DateTime::<Utc>::MAX_UTC))
+                    }
+                    (None, Some(to)) => {
+                        let end = parse_bound(to, true).map_err(|e| miette::miette!("{e}"))?;
+                        Some(TimeRange::new(DateTime::<Utc>::MIN_UTC, end))
+                    }
+                    (Some(from), Some(to)) => {
+                        let start = parse_bound(from, false).map_err(|e| miette::miette!("{e}"))?;
+                        let end = parse_bound(to, true).map_err(|e| miette::miette!("{e}"))?;
+                        Some(TimeRange::new(start, end))
+                    }
+                };
+                bound.unwrap_or_else(|| ltmx_brief::last_24h(Utc::now()))
+            };
+            let filter = ltmx_brief::filter_for(kind, window);
+            let scoped = ltmx_brief::filter_by_path(chunks.clone(), kind, &work_prefix);
+            let evidence = ltmx_brief::select_evidence(&scoped, &filter, top_k);
+
+            eprintln!(
+                "{}: {} pieces of evidence, {} -> {}",
+                kind.label(),
+                evidence.len(),
+                window.start.to_rfc3339(),
+                window.end.to_rfc3339()
+            );
+
+            let generator = ltmx_brief::OllamaGenerator::new(gen_model);
+            let text = ltmx_brief::generate_brief(&generator, kind, window, &evidence)
+                .map_err(|e| miette::miette!("{e}"))?;
+            println!("{text}");
+        }
     }
 
     Ok(())

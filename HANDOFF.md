@@ -2,20 +2,41 @@
 
 ## Status
 
-| Check                                           | Result                                                                                       |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Tests                                           | 125 passing, 0 failing (5 ignored) under default features; **17 more** with `pieces-archive` |
-| Clippy                                          | clean, `-D warnings`                                                                         |
-| `cargo fmt --all --check`                       | clean                                                                                        |
-| `cargo check --workspace --no-default-features` | clean                                                                                        |
-| `cargo deny check`                              | advisories ok, bans ok, licenses ok, sources ok                                              |
-| `rustqual .`                                    | 84.0%, 38 findings                                                                           |
-| Ollama integration (live server)                | 4/4 passing                                                                                  |
-| Fuzz (`parse_transcript`)                       | 389,506 executions, 0 crashes                                                                |
-| Git                                             | **repository initialized, nothing committed**                                                |
+**Gate numbers below (tests/clippy/fmt/deny/rustqual/fuzz) are from before any
+commit existed and predate the `ltmx-store` crate — re-run before trusting
+them.** Only the `Git` row has been re-verified, as of 2026-10-28.
+
+| Check                                           | Result                                                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Tests                                           | 125 passing, 0 failing (5 ignored) under default features; **17 more** with `pieces-archive` — **stale, predates `ltmx-store`** |
+| Clippy                                          | clean, `-D warnings` — **stale**                                                                                                |
+| `cargo fmt --all --check`                       | clean — **stale**                                                                                                               |
+| `cargo check --workspace --no-default-features` | clean — **stale**                                                                                                               |
+| `cargo deny check`                              | advisories ok, bans ok, licenses ok, sources ok — **stale**                                                                     |
+| `rustqual .`                                    | 84.0%, 38 findings — **stale**                                                                                                  |
+| Ollama integration (live server)                | 4/4 passing — **stale**                                                                                                         |
+| Fuzz (`parse_transcript`)                       | 389,506 executions, 0 crashes — **stale**                                                                                       |
+| Git                                             | 6 commits on `develop`, pushed to `github.com/89jobrien/ltmx` (public, remote added 2026-10-28)                                 |
 
 Measured corpus: **57,766 chunks / 805 sessions**, 2026-07-14 → 2026-10-14, 0
-skipped lines.
+skipped lines. (Stale as a "current" figure too — see the `pieces-archive`
+numbers elsewhere in this file for the larger combined corpus.)
+
+## Recent updates (2026-10-28)
+
+- `rust-audit` over all 6 library crates: zero judgment-bucket findings; fixed
+  5 broken rustdoc intra-doc links (commit `e14fb57`).
+- Fixed a real deadlock in `ltmx-store::run_sqlite`/`run_sqlite_output` — the
+  child `sqlite3 -batch` process's stdin pipe was never closed
+  (`child.stdin.as_mut()` instead of `.take()`), so it blocked forever waiting
+  for EOF. Fixed, with a regression test added (commit `c925238`).
+- Added runnable examples: `cargo run -p ltmx-lexical --example search`,
+  `cargo run -p ltmx-retrieve --example hybrid_search`, `cargo run -p
+ltmx-store --example corpus`. Documented in `README.md`.
+- Created the GitHub remote and pushed `develop`. `repository` metadata in
+  `Cargo.toml` is still unset even though the stated blocker ("no remote
+  exists yet") no longer applies — worth filling in.
+- Full session detail: `.ctx/godmode/memory-bank/active-context.md`.
 
 ## What this project is
 
@@ -317,7 +338,8 @@ first.
 
 ## State of the working tree
 
-Uncommitted. `git init` has run and files were staged early on; the working tree
-has moved well past that staging. Nothing has been committed, so `git log` is
-empty. Review `git status` before the first commit — nothing has been verified
-against a clean checkout yet.
+As of 2026-10-28: 6 commits on `develop`, pushed to `github.com/89jobrien/ltmx`
+(public remote, added this session). No `main` branch exists yet on the
+remote — only `develop` has been pushed. Run `git log --oneline` and `git
+status` at the start of a session rather than trusting this note, since it
+will go stale the same way the paragraph it replaced did.
