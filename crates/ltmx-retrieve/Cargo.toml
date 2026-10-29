@@ -11,7 +11,6 @@ default = []
 
 [dependencies]
 ltmx-domain.workspace = true
-thiserror.workspace = true
 
 [dev-dependencies]
 chrono.workspace = true

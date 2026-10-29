@@ -10,7 +10,6 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 ltmx-sources = { path = "../crates/ltmx-sources", features = ["claude-transcripts"] }
-serde_json = "1"
 tempfile = "3"
 
 [[bin]]

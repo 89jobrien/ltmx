@@ -6,6 +6,7 @@ members = [
     "crates/ltmx-retrieve",
     "crates/ltmx-embed",
     "crates/ltmx-store",
+    "crates/ltmx-brief",
     "crates/ltmx-probe",
     "xtask",
 ]
@@ -52,6 +53,7 @@ ltmx-sources = { path = "crates/ltmx-sources" }
 ltmx-lexical = { path = "crates/ltmx-lexical" }
 ltmx-retrieve = { path = "crates/ltmx-retrieve" }
 ltmx-store = { path = "crates/ltmx-store" }
+ltmx-brief = { path = "crates/ltmx-brief" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
