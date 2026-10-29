@@ -21,3 +21,9 @@ fuzz/artifacts
 .ctx/HANDOFF.hj.hj.state.json
 .ctx/.initialized
 # handoff-end
+
+.taskit/
+memory.mcpmem
+memory.mcpmem-shm
+memory.mcpmem-wal
+memory.mcpmem.workspaces.sqlite
