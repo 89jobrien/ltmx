@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "algorithm": "sha256-normalized-core-contract-v1",
+  "surfaces": [
+    {
+      "name": "ltmx-domain-ports",
+      "path": "crates/ltmx-domain/src/ports/mod.rs",
+      "hash": "f0704217b37934492bd0d655ac14ad4b8bd5610ee512665da2601afb685a7041"
+    }
+  ]
+}
