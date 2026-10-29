@@ -1,0 +1,15 @@
+[package]
+name = "ltmx-brief"
+description = "Generates evidence-backed periodic summaries (morning/professional/personal briefs) over ltmx retrieval results."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+ltmx-domain.workspace = true
+ltmx-embed = { path = "../ltmx-embed", features = ["ollama"] }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
